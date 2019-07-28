@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link id='bootstrap' href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" href="external/stylesheet/lobbyStyles.css">
+
+    <title>Lobby</title>
+</head>
+<body>
+<div class="container">
+    <div class="msgcontainer">
+        <div class="msgbox"></div>
+        <div class="sender">
+            <input type="text" id="msgtxt" placeholder="Enter Message"/>
+            <button class="btn btn-primary" id="sendmsg">SEND</button>
+        </div>
+    </div>
+    <div class="contacts">
+        <div class="client">
+            <h1 id="welcome">Welcome ???</h1>
+            <button class="btn btn-danger" id="logout">LOGOUT</button>
+
+        </div>
+        <div class="allclients">
+            <h3>Connected users:</h3>
+            <ul id="users"></ul>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+<script>
+
+    var firstUse = true;
+
+    $(document).ready(function() {
+        if(firstUse){
+            $('#welcome').html('Welcome '+name+'!');
+
+            $.ajax({
+                method: "post",
+                url: "MessagingServlet",
+                data: {userName:name, type:2}
+            });
+
+            refreshChat();
+            firstUse = false;
+        }
+
+        var id = setInterval(function() {
+            refreshChat();
+        }, 30*1000); // 30 seconds
+    });
+
+    function addNewMessage (name, msg) {
+        var textbox = $('.msgbox');
+        var p = $("<p></p>");
+
+        p.html("<b>" + name + ":</b>" + msg);
+        textbox.append(p);
+        textbox.stop().animate({ scrollTop: textbox[0].scrollHeight});
+    }
+
+    function addNewUser (uid, name) {
+        var clientsList = $('#users');
+        var li = $("<li></li>");
+
+        li.text(name);
+        clientsList.append(li);
+    }
+
+    function refreshChat() {
+        $.ajax({
+                method: "post",
+                url: "MessagingServlet",
+                data: {type:1},
+                success: function (results) {
+                    update(results);
+                }
+            }
+        );
+    }
+
+
+    $('#msgtxt').on('keypress', function(event) {
+        if (event.keyCode === 13 || event.keyCode === 10) {
+            $('#sendmsg').click();
+        }
+    });
+
+    var name = Cookies.get('name');
+    $('#sendmsg').click(function(){
+        var msg = $("#msgtxt").val().trim();
+        if(msg.length !== 0) {
+            addNewMessage(name, msg);
+            $.ajax({
+                    method: "post",
+                    url: "MessagingServlet",
+                    data:{userName:name, msg:msg, type:0},
+                    success: function (results) {
+                        update(results);
+                    }
+
+                }
+            );
+        }
+        // clear input for new message
+        $("#msgtxt").val("");
+    });
+
+    $('#logout').click(function(){
+        $.ajax({
+                method: "post",
+                url: "MessagingServlet",
+                data: {type:3}
+            }
+        );
+
+        $.ajax({
+                method: "get",
+                url: "connect",
+                success:function(url){window.location = url;}
+            }
+        );
+    });
+
+    var update = function(results) {
+        // if user is disconnect, send him to login page
+        if(!results.connected && !firstUse){
+            swal({
+                text:"You Have Been Disconnected!",
+                icon:'info',
+                buttons: [undefined, true]})
+                .then(function() {
+                    window.location = "";
+                });
+        }
+
+        // update new incoming messages
+        var messages = results.messages.split("\n");
+
+        if(messages.length > 0) {
+            $('.msgbox').html("");
+            $.each(messages, function (index, value) {
+                var msgInfo = value.split(':');
+                var name = msgInfo[0];
+                var msg = msgInfo[1];
+
+                if(msg != null)
+                    addNewMessage(name, msg);
+
+            });
+        }
+
+        // update the list of current connected users
+        $('#users').empty();
+        $.each(results.users, function(i, value) {
+            addNewUser(0, value);
+        });
+
+    }
+</script>
+
+</body>
+</html>

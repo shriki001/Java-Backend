@@ -1,0 +1,36 @@
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="external/stylesheet/loginStyles.css">
+
+    <title>Title</title>
+</head>
+
+<body>
+<div class ="main-div">
+    <h1>Login</h1>
+<form action="connect" method="post">
+    <input type="text" placeholder="User Name" id="name" name="name"><br>
+    <input type="submit" id="go" value="Enter Chat">
+</form>
+</div>
+
+<script>
+    $("#go").click(function(){
+        var name = $("#name").val();
+        var newname = name.trim();
+        $("#name").val(newname);
+        if(newname.trim().length === 0) {
+            swal("Name Cannot Be Empty!!",'','error');
+            event.preventDefault();
+        }
+    });
+</script>
+
+<body>
+<html>

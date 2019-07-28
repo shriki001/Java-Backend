@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/lobbyStyles.css}">
+    <title>Lobby</title>
+</head>
+<body>
+<div class="container">
+    <div class="msgcontainer">
+        <div class="msgbox">
+            <div th:each="i : ${#numbers.sequence(topmsg.size()-1,0,-1)}">
+                <b th:text="${topmsg[i].author} +': '"></b>
+                <span th:text="${topmsg[i].msg}"></span>
+            </div>
+        </div>
+        <div class="sender">
+            <input type="text" id="msgtxt" placeholder="Enter Message"/>
+            <button class="btn btn-primary" id="sendmsg">SEND</button>
+        </div>
+    </div>
+    <div class="contacts">
+        <div class="client">
+            <h1 th:text="'Welcome ' + ${user.name} + '!'"></h1>
+            <a th:href="@{/disconnect/{id}(id=${user.id})}"
+               class="btn btn-danger">LOGOUT</a>
+        </div>
+        <div class="allclients">
+            <a th:href="@{/search}" class="btn btn-primary" id="search"><i
+                    class="fa fa-search"></i> Search </a>
+            <h3>Connected Users:</h3>
+            <ul id="users">
+                <li th:each="user : ${users}" th:text="${user.name}"></li>
+            </ul>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+
+<script th:inline="javascript">
+    var msgid = 0;
+    $(document).ready(()=> {
+        var msg =  /*[[${topmsg}]]*/ "";
+        if (msg.length !== 0)
+            msgid = msg[0]['id'];
+        window.addEventListener("focus",()=>{
+            $('#msgtxt').focus();
+        }, false);
+        setInterval(()=> {
+            refreshChat();
+        }, 10 * 1000); // 30 seconds
+    });
+
+    function addNewMessage(name, msg) {
+        var textbox = $('.msgbox');
+        var p = $("<div></div>");
+
+        p.html("<b>" + name + ": </b><span>" + msg + "</span>");
+        textbox.append(p);
+        textbox.stop().animate({scrollTop: textbox[0].scrollHeight});
+    }
+
+    function addNewUser(name) {
+        var clientsList = $('#users');
+        var li = $("<li></li>");
+        li.text(name);
+        clientsList.append(li);
+    }
+
+    function refreshChat() {
+        $.ajax({
+            method: "post",
+            url: "getjson/" + msgid,
+            success:  (results)=> {
+                if (results.length !== 0)
+                    msgid = (msgid > results[results.length - 1]['id']) ? msgid
+                        : results[results.length - 1]['id'];
+                update(results);
+            }
+        });
+
+        $.ajax({
+            method: "post",
+            url: "getusers",
+            success: (results)=> {
+                // update the list of current connected users
+                $('#users').empty();
+                var id = /*[[${user.id}]]*/ "";
+                var flag = false;
+                $.each(results, (i, value) => {
+                    if (value['id'] === id)
+                        flag = true;
+                    addNewUser(value['name']);
+                });
+                if (!flag || results.length === 0)
+                    handleDisconnect();
+            }
+        });
+    }
+
+
+    $('#msgtxt').on('keypress',(event)=> {
+        if (event.keyCode === 13 || event.keyCode === 10) {
+            $('#sendmsg').click();
+        }
+    });
+
+    var name = /*[[${user.name}]]*/ "";
+    $('#sendmsg').click(()=> {
+        var msg = $("#msgtxt").val().trim();
+        if (msg.length !== 0) {
+            $.ajax({
+                method: "post",
+                url: "sendmsg",
+                data: {author: name, msg: msg},
+                success: (results)=> {
+                    if (results === "")
+                        handleDisconnect();
+                    var res = results.filter(msg => msg['id'] > msgid);
+                    if (results.length !== 0)
+                        msgid = (msgid > results[results.length - 1]['id']) ? msgid : results[results.length - 1]['id'];
+                    update(res);
+                }
+            });
+        }
+        // clear input for new message
+        $("#msgtxt").val("");
+    });
+
+    // if user is disconnect, send him to login page
+    function handleDisconnect() {
+        swal({
+            text: "You Have Been Disconnected!",
+            icon: 'info',
+            buttons: [undefined, true]
+        }).then(()=> {
+            window.location = "/";
+        });
+    }
+
+    var update = function (results) {
+        // update new incoming messages
+        $.each(results, (index, value)=> {
+            var name = value['author'];
+            var msg = value['msg'];
+            if (msg != null)
+                addNewMessage(name, msg);
+
+        });
+    };
+
+</script>
+</body>
+</html>

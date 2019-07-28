@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"
+            integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa"
+            crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
+    <link id='bootstrap' href="https://stackpath.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"
+          rel="stylesheet">
+    <link rel="stylesheet" type="text/css" th:href="@{/css/searchStyles.css}">
+    <title>Search</title>
+</head>
+<body>
+<h2>Search</h2>
+<a th:href="@{/}" class="btn btn-primary"><i class="fa fa-comments"></i> Lobby </a>
+<div class="sbtn">
+    <a class="btn btn-primary" id="bauthor" >Search Author</a>
+    <a class="btn btn-primary" id="bmsg">Search Message</a>
+    <input th:type="text" id="intext" placeholder="Search text here">
+</div>
+<table>
+    <thead id="shead">
+    <tr>
+        <td>Author</td>
+        <td>Message</td>
+    </tr>
+    </thead>
+    <tbody id="sbody">
+    </tbody>
+</table>
+
+<script>
+    $(document).ready(function(){
+        $("#bauthor").click(function(){
+            $('#sbody').empty();
+            var author = $('#intext').val().trim();
+            if(author.length !== 0) {
+                $.ajax({
+                    method: 'post',
+                    url: 'searcha/' + author,
+                    success: function (res) {
+                        if(res.length === 0)
+                            handleEmptyRes(author);
+                    $.each(res,(index,value)=>{
+                        var name = value['author'];
+                        var msg = value['msg'];
+                        $('#sbody').append("<tr><td>"+name+"</td><td>"+msg+"</td></tr>");
+                    });
+                    }
+
+                });
+            }
+            else handleEmpty();
+            $('#intext').val("");
+        });
+        $("#bmsg").click(function(){
+            $('#sbody').empty();
+            var msg = $('#intext').val().trim();
+            if(msg.length !== 0) {
+                $.ajax({
+                    method: 'post',
+                    url: 'searchm/' + msg,
+                    success: function (res) {
+                        if(res.length === 0)
+                            handleEmptyRes(msg);
+                        $.each(res,(index,value)=>{
+                            var name = value['author'];
+                            var msg = value['msg'];
+                            $('#sbody').append("<tr><td>"+name+"</td><td>"+msg+"</td></tr>");
+                        });
+                    }
+
+                });
+            }
+            else handleEmpty();
+            $('#intext').val("");
+        });
+
+    });
+    function handleEmpty(){
+        swal("Search Text Cannot Be Empty!!",'','error');
+    }
+
+    function handleEmptyRes(print){
+        swal({
+            title: print,
+            icon: 'info',
+            text:"No Such Data!",
+            buttons: [,true]
+        });
+    }
+</script>
+<script src="https://cdn.jsdelivr.net/npm/js-cookie@2/src/js.cookie.min.js"></script>
+</body>
+</html>

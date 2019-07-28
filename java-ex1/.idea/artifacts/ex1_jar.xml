@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="ex1:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/ex1_jar</output-path>
+    <root id="archive" name="ex1.jar">
+      <element id="directory" name="META-INF">
+        <element id="file-copy" path="$USER_HOME$/Desktop/META-INF/MANIFEST.MF" />
+      </element>
+      <element id="module-output" name="ex1" />
+      <element id="extracted-dir" path="$USER_HOME$/Downloads/jsoup-1.11.3.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

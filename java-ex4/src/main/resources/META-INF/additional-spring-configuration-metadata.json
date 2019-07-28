@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "pring.autoconfigure.exclude",
+      "type": "java.lang.String",
+      "description": "Description for pring.autoconfigure.exclude."
+  }
+] }
